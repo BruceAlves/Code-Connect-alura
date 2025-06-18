@@ -3,6 +3,7 @@ import { Aside } from "@/components/Aside";
 import "./globals.css";
 import { SearchForm } from "@/components/SearchForm";
 import { ReactQueryProvider } from "./ReactQueryProvider";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 export const metadata = {
   title: "Code Connect",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
               {children}
             </div>
           </div>
+          <ReactQueryDevtools initialIsOpen={false} position="bottom" />
         </ReactQueryProvider>
       </body>
     </html>

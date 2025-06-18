@@ -19,8 +19,6 @@ const PagePost = ({ params }) => {
     queryFn: () => fetchPostBySlug({ slug: slug })
   })
 
-
-
   const postRating = null;
 
   return (
