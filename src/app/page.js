@@ -66,6 +66,7 @@ export default function Home({ searchParams }) {
           rating={ratingsAndCartegoriesMap?.[post.id]?.rating}
           category={ratingsAndCartegoriesMap?.[post.id]?.category}
           isFetching={isFetching}
+          currentPage={currentPage}
         />
       ))}
       <div className={styles.links}>

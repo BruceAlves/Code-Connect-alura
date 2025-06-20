@@ -1,3 +1,5 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import Image from "next/image";
 import { Avatar } from "../Avatar";
 import { Star } from "../icons/Star";
@@ -6,7 +8,42 @@ import Link from "next/link";
 import { ThumbsUpButton } from "./ThumbsUpButton";
 import { ModalComment } from "../ModalComment";
 
-export const CardPost = ({ post, highlight, rating, category, isFetching }) => {
+export const CardPost = ({
+  post,
+  highlight,
+  rating,
+  category,
+  isFetching,
+  currentPage,
+}) => {
+  const queryClient = useQueryClient();
+
+  const thumbsMutation = useMutation({
+    mutationFn: (postData) => {
+      return fetch("http://localhost:3000/api/thumbs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error!  status ${response.status}`);
+        }
+
+        return response.json();
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["post", post.slug]);
+      queryClient.invalidateQueries(["posts", currentPage]);
+    },
+    onError: (error, variables) => {
+      console.error(
+        `Erro ao salvar o thumbsUp para o slug: ${variables.slug}`,
+        { error }
+      );
+    },
+  });
+
   return (
     <article className={styles.card} style={{ width: highlight ? 993 : 486 }}>
       <header className={styles.header}>
@@ -25,8 +62,18 @@ export const CardPost = ({ post, highlight, rating, category, isFetching }) => {
       </section>
       <footer className={styles.footer}>
         <div className={styles.actions}>
-          <form>
+          <form
+            onClick={(event) => {
+              event.preventDefault();
+              thumbsMutation.mutate({ slug: post.slug });
+            }}
+          >
             <ThumbsUpButton disable={isFetching} />
+            {thumbsMutation.isError && (
+              <p className={styles.ThumbsUpButtonMessage}>
+                Oops, ocorreu um erro ao salvar thumbsUp.
+              </p>
+            )}
             <p>{post.likes}</p>
           </form>
           <div>
