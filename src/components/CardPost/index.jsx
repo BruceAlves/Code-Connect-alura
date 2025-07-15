@@ -54,7 +54,7 @@ export const CardPost = ({
     },
     onSuccess: () => {
       if (currentPage) {
-        queryClient.invalidateQueries(["post", currentPage])
+        queryClient.invalidateQueries(["post", post.currentPage])
       }
     },
     onError: (error, variables, context) => {
