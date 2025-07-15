@@ -7,6 +7,7 @@ import styles from "./cardpost.module.css";
 import Link from "next/link";
 import { ThumbsUpButton } from "./ThumbsUpButton";
 import { ModalComment } from "../ModalComment";
+//import { useEffect } from "react";
 
 export const CardPost = ({
   post,
@@ -32,9 +33,24 @@ export const CardPost = ({
         return response.json();
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["post", post.slug]);
-      queryClient.invalidateQueries(["posts", currentPage]);
+    onMutate: async (newData) => {
+      const postQueryKey = ["post", post.slug]
+
+      // cancelar queries em voo para detalhes do post
+      await queryClient.cancelQueries(postQueryKey)
+
+      const prevPost = queryClient.getQueryData(postQueryKey)
+
+      // Atualizar um unico post
+
+      if (prevPost) {
+        queryClient.setQueryData(postQueryKey, {
+          ...prevPost,
+          likes: prevPost.likes + 1
+        })
+      }
+
+      return { prevPost };
     },
     onError: (error, variables) => {
       console.error(
@@ -43,6 +59,41 @@ export const CardPost = ({
       );
     },
   });
+
+  // // atualização otimista via UI
+  // useEffect(() => {
+  //   if (thumbsMutation.isPending && thumbsMutation.variables) {
+  //     post.likes = post.likes + 1
+  //   }
+  // }, [thumbsMutation.isPending, thumbsMutation.variables])
+
+  const submitCommentMutation = useMutation({
+    mutationFn: (commentData) => {
+      return fetch(`http://localhost:3000/api/comment/${post.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(commentData),
+      })
+    }, onSuccess: () => {
+      queryClient.invalidateQueries(["post", post.slug]);
+      queryClient.invalidateQueries(["posts", currentPage]);
+    },
+    onError: (error, variables) => {
+      console.error(
+        `Erro ao salvar o comentário para o slug: ${variables.slug}`,
+        { error }
+      );
+    }
+  })
+
+  const onSubmitComment = (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const text = formData.get("text");
+
+    submitCommentMutation.mutate({ id: post.id, text });
+  };
 
   return (
     <article className={styles.card} style={{ width: highlight ? 993 : 486 }}>
@@ -77,7 +128,7 @@ export const CardPost = ({
             <p>{post.likes}</p>
           </form>
           <div>
-            <ModalComment />
+            <ModalComment onSubmit={onSubmitComment} />
             <p>{post.comments.length}</p>
           </div>
           {rating && (
